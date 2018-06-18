@@ -80,7 +80,8 @@ public class GrowthSocket: Hashable, Equatable {
     
     public func port() throws -> in_port_t {
         var addr = sockaddr_in()
-        return try withUnsafePointer(to: &addr) { pointer in
+        var addrUnsafePointer = addr
+        return try withUnsafePointer(to: &addrUnsafePointer) { pointer in
             var len = socklen_t(MemoryLayout<sockaddr_in>.size)
             if getsockname(socketFileDescriptor, UnsafeMutablePointer(OpaquePointer(pointer)), &len) != 0 {
                 throw GrowthSocketError.getSockNameFailed(String(cString: UnsafePointer(strerror(errno))))
@@ -94,13 +95,26 @@ public class GrowthSocket: Hashable, Equatable {
     }
     
     public func isIPv4() throws -> Bool {
-        var addr = sockaddr_in()
-        return try withUnsafePointer(to: &addr) { pointer in
+        let addr = sockaddr_in()
+        var addrUnsafePointer = addr
+        return try withUnsafePointer(to: &addrUnsafePointer) { pointer in
             var len = socklen_t(MemoryLayout<sockaddr_in>.size)
             if getsockname(socketFileDescriptor, UnsafeMutablePointer(OpaquePointer(pointer)), &len) != 0 {
                 throw GrowthSocketError.getSockNameFailed(String(cString: UnsafePointer(strerror(errno))))
             }
             return Int32(addr.sin_family) == AF_INET
+        }
+    }
+    
+    public func isIPv6() throws -> Bool {
+        let addr = sockaddr_in6()
+        var addrUnsafePointer = addr
+        return try withUnsafePointer(to: &addrUnsafePointer) { pointer in
+            var len = socklen_t(MemoryLayout<sockaddr_in6>.size)
+            if getsockname(socketFileDescriptor, UnsafeMutablePointer(OpaquePointer(pointer)), &len) != 0 {
+                throw GrowthSocketError.getSockNameFailed(String(cString: UnsafePointer(strerror(errno))))
+            }
+            return Int32(addr.sin6_family) == AF_INET6
         }
     }
     

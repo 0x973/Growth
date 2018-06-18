@@ -115,7 +115,7 @@ extension GrowthHttpRouter {
             // if it's the last element of the requested URL, check if there is a pattern with variable tail.
             if let variableNode = node.nodes.filter({ $0.0.first == ":" }).first {
                 if variableNode.value.nodes.isEmpty {
-                    params[variableNode.0] = ""
+                    params[variableNode.key] = String()
                     return variableNode.value.handler
                 }
             }
@@ -123,19 +123,19 @@ extension GrowthHttpRouter {
         }
         let variableNodes = node.nodes.filter { $0.0.first == ":" }
         if let variableNode = variableNodes.first {
-            if variableNode.1.nodes.count == 0 {
+            if variableNode.value.nodes.count == 0 {
                 // if it's the last element of the pattern and it's a variable, stop the search and
                 // append a tail as a value for the variable.
                 let tail = generator.joined(separator: "/")
                 if tail.count > 0 {
-                    params[variableNode.0] = pathToken + "/" + tail
+                    params[variableNode.key] = pathToken + "/" + tail
                 } else {
-                    params[variableNode.0] = pathToken
+                    params[variableNode.key] = pathToken
                 }
-                return variableNode.1.handler
+                return variableNode.value.handler
             }
-            params[variableNode.0] = pathToken
-            return findHandler(&node.nodes[variableNode.0]!, params: &params, generator: &generator)
+            params[variableNode.key] = pathToken
+            return findHandler(&node.nodes[variableNode.key]!, params: &params, generator: &generator)
         }
         if var node = node.nodes[pathToken] {
             return findHandler(&node, params: &params, generator: &generator)

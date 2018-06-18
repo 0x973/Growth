@@ -74,13 +74,17 @@ public class GrowthHttpServerIO {
         return try socket.isIPv4()
     }
     
+    public func isIPv6() throws -> Bool {
+        return try socket.isIPv6()
+    }
+    
     @available(macOS 10.10, *)
     public func start(_ port: in_port_t, forceIPv4: Bool = true, listenAddress: String = "0.0.0.0", priority: DispatchQoS.QoSClass = DispatchQoS.QoSClass.background) throws {
         guard !self.operating else { return }
         stop()
         self.state = .starting
         listenAddressIPv4 = listenAddress
-        let address = forceIPv4 ? listenAddressIPv4 : listenAddressIPv6
+        let address = forceIPv4 ? listenAddressIPv4 : listenAddressIPv6 ?? "::"
         self.socket = try GrowthSocket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address)
         self.state = .running
         DispatchQueue.global(qos: priority).async { [weak self] in
@@ -106,7 +110,6 @@ public class GrowthHttpServerIO {
     public func stop() {
         guard self.operating else { return }
         self.state = .stopping
-        // Shutdown connected peers because they can live in 'keep-alive' or 'websocket' loops.
         for socket in self.sockets {
             socket.close()
         }
@@ -136,7 +139,7 @@ public class GrowthHttpServerIO {
                     keepConnection = try self.respond(socket, response: response, keepAlive: keepConnection)
                 }
             } catch {
-                print("Failed to send response: \(error)")
+                print("[\(#file): \(#line) \(#function)]Failed to send response: \(error)")
                 break
             }
             if let session = response.socketSession() {
